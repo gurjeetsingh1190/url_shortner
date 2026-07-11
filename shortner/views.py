@@ -15,6 +15,9 @@ def home(request):
             form = URLForm(request.POST)
             if form.is_valid():
                 url_obj = form.save(commit=False)
+                custom_code = form.cleaned_data.get('custom_code')
+                if custom_code:
+                    url_obj.short_code = custom_code
                 if request.user.is_authenticated:
                     url_obj.user = request.user
                 if request.POST.get('is_qr_only') == 'true':
@@ -36,6 +39,9 @@ def home(request):
             form = URLForm(request.POST)
             if form.is_valid():
                 url_obj = form.save(commit=False)
+                custom_code = form.cleaned_data.get('custom_code')
+                if custom_code:
+                    url_obj.short_code = custom_code
                 if request.user.is_authenticated:
                     url_obj.user = request.user
                 if request.POST.get('is_qr_only') == 'true':

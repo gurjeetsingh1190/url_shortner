@@ -4,6 +4,16 @@ from .models import URL
 
 
 class URLForm(forms.ModelForm):
+    custom_code = forms.CharField(
+        max_length=50, 
+        required=False,
+        label='Custom Alias (Optional)',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'e.g. my-custom-link',
+            'class': 'url-input'
+        })
+    )
+
     class Meta:
         model = URL
         fields = ['original_url']
@@ -20,3 +30,13 @@ class URLForm(forms.ModelForm):
         if url and not (url.startswith('http://') or url.startswith('https://')):
             raise forms.ValidationError("URL must start with http:// or https://")
         return url
+
+    def clean_custom_code(self):
+        custom_code = self.cleaned_data.get('custom_code')
+        if custom_code:
+            if URL.objects.filter(short_code=custom_code).exists():
+                raise forms.ValidationError(f"The alias '{custom_code}' is already taken.")
+            import re
+            if not re.match(r'^[\w-]+$', custom_code):
+                raise forms.ValidationError("Alias can only contain letters, numbers, hyphens, and underscores.")
+        return custom_code

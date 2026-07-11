@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Shortener</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
         if (localStorage.getItem('theme') === 'light') {
             document.documentElement.classList.add('light-theme');
@@ -14,64 +15,96 @@
 </head>
 <body>
 
-    <div class="auth-bar" style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; font-size: 0.9rem; margin-bottom: 2rem; color: var(--text-muted);">
-        <button id="theme-toggle" class="btn-auth-outline" style="padding: 0.35rem 0.75rem; border-radius: 20px;" aria-label="Toggle theme">
-            ☀️ Light Mode
-        </button>
-        {% if request.user.is_authenticated %}
-        <a href="{% url 'dashboard' %}" class="btn-auth">Account</a>
-        <form action="{% url 'logout' %}" method="POST" style="display: inline; margin: 0; padding: 0;">
-            {% csrf_token %}
-            <button type="submit" class="btn-auth-outline">Logout</button>
-        </form>
-        {% else %}
-        <a href="{% url 'login' %}" class="btn-auth">Login</a>
-        <a href="{% url 'signup' %}" class="btn-auth">Sign Up</a>
-        {% endif %}
-    </div>
+    <!-- Floating Glass Header -->
+    <header class="glass-header">
+        <div class="header-content">
+            <a href="{% url 'home' %}" class="logo-link">
+                <i class="ph ph-link"></i> Shortener
+            </a>
+            <div class="auth-bar">
+                <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
+                    <i class="ph ph-sun"></i>
+                </button>
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="icon-btn tooltip-trigger" aria-label="Account">
+                    <i class="ph ph-user"></i>
+                </a>
+                <form action="{% url 'logout' %}" method="POST" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="icon-btn tooltip-trigger" aria-label="Logout">
+                        <i class="ph ph-sign-out"></i>
+                    </button>
+                </form>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn-auth">Login</a>
+                <a href="{% url 'signup' %}" class="btn-auth-outline">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
 
-    <!-- Centered hero layout to fill empty space beautifully -->
     <div class="home-container">
         <main style="text-align: center; margin-bottom: 2rem;">
             <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem; font-weight: 700;">URL Shortener</h1>
             <p style="color: var(--text-muted); margin-bottom: 2.5rem; font-size: 1.05rem;">Turn long, messy links into short, beautiful URLs and secure QR codes.</p>
 
-            <form id="shorten-form" class="shortener-form">
+            <form id="shorten-form" class="shortener-form glass-panel">
                 {% csrf_token %}
-                <div class="input-wrapper">
-                    <input 
-                        type="url" 
-                        name="original_url" 
-                        id="url-input" 
-                        class="url-input" 
-                        placeholder="Paste your long URL here..." 
-                        required
-                    >
+                <div class="form-row">
+                    <div class="input-wrapper">
+                        <input type="url" name="original_url" id="url-input" class="glass-input" placeholder="Paste your long URL here..." required>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="text" name="custom_code" id="custom-input" class="glass-input" placeholder="Custom Alias (Optional)">
+                    </div>
                 </div>
-                <button type="submit" id="submit-btn" class="btn-primary">
-                    <span id="btn-text">Shorten URL</span>
-                </button>
-                <button type="button" id="qr-submit-btn" class="btn-primary" style="background-color: transparent; color: var(--text-color); border: 1px solid var(--border-color);">
-                    <span id="qr-btn-text">Create QR</span>
-                </button>
+                
+                <div class="form-actions">
+                    <button type="submit" id="submit-btn" class="btn-primary">
+                        <span id="btn-text">Shorten URL</span>
+                    </button>
+                    <button type="button" id="qr-submit-btn" class="btn-outline">
+                        <span id="qr-btn-text">Create QR</span>
+                    </button>
+                </div>
             </form>
+
+            <!-- Dynamic Result Card -->
+            <div id="result-card" class="glass-panel result-card" style="display: none;">
+                <div class="result-content">
+                    <div class="result-details">
+                        <span class="result-label">Your Link is Ready:</span>
+                        <a href="#" id="result-link" target="_blank" rel="noopener noreferrer" class="result-url"></a>
+                    </div>
+                    <div class="result-actions">
+                        <button type="button" id="copy-result-btn" class="icon-btn primary-icon-btn">
+                            <i class="ph ph-copy"></i>
+                        </button>
+                        <button type="button" id="qr-result-btn" class="icon-btn outline-icon-btn">
+                            <i class="ph ph-qr-code"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
-    <!-- Modal for QR Code Display -->
+    <!-- Modal for QR Code -->
     <div id="qr-modal" class="modal-overlay">
-        <div class="modal">
+        <div class="modal glass-panel">
             <div class="modal-header">
                 <h3>QR Code</h3>
-                <div style="display: flex; gap: 0.75rem;">
-                    <button id="download-qr-btn" class="modal-close" style="text-decoration: underline;">Download</button>
-                    <button id="close-modal" class="modal-close">Close</button>
-                </div>
+                <button id="close-modal" class="icon-btn"><i class="ph ph-x"></i></button>
             </div>
             <div class="qr-container">
                 <img id="qr-image" src="" alt="QR Code">
             </div>
             <p class="qr-link-text" id="qr-link"></p>
+            <div class="modal-actions" style="margin-top: 1.5rem; text-align: center;">
+                <button id="download-qr-btn" class="btn-primary" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-download-simple"></i> Download PNG
+                </button>
+            </div>
         </div>
     </div>
 

@@ -156,3 +156,38 @@ class URLShortenerTests(TestCase):
         self.assertContains(response, "<h4>Total Links</h4><p>2</p>", html=True)
         self.assertContains(response, "<h4>Total Clicks</h4><p>15</p>", html=True)
         self.assertContains(response, "<h4>QR Codes Created</h4><p>1</p>", html=True)
+
+    def test_ajax_shorten_url_with_custom_code(self):
+        """Verify shortening a URL with a custom alias works."""
+        response = self.client.post(
+            reverse('home'),
+            {
+                'original_url': 'https://github.com/custom',
+                'custom_code': 'my-custom-alias'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['short_code'], 'my-custom-alias')
+        
+        db_url = URL.objects.get(short_code='my-custom-alias')
+        self.assertEqual(db_url.original_url, 'https://github.com/custom')
+
+    def test_ajax_shorten_url_custom_code_collision(self):
+        """Verify providing a taken custom alias returns an error."""
+        URL.objects.create(original_url="https://google.com", short_code="taken-alias")
+        
+        response = self.client.post(
+            reverse('home'),
+            {
+                'original_url': 'https://github.com/another',
+                'custom_code': 'taken-alias'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertFalse(data['success'])
+        self.assertIn('taken-alias', data['error'])
