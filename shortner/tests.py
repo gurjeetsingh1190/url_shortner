@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import URL
+from .forms import URLForm
 
 
 class URLShortenerTests(TestCase):
@@ -90,3 +91,15 @@ class URLShortenerTests(TestCase):
         # Check redirect on success
         self.assertEqual(response.status_code, 302)
         self.assertTrue(User.objects.filter(username='newuser').exists())
+
+    def test_url_protocol_validation(self):
+        """Verify URL validation blocks non-http/https protocols."""
+        form_data = {'original_url': 'javascript:alert(1)'}
+        form = URLForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('original_url', form.errors)
+        
+        # Test valid url
+        form_data = {'original_url': 'https://google.com'}
+        form = URLForm(data=form_data)
+        self.assertTrue(form.is_valid())

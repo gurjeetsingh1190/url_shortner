@@ -14,3 +14,9 @@ class URLForm(forms.ModelForm):
                 'class': 'url-input',
             })
         }
+
+    def clean_original_url(self):
+        url = self.cleaned_data.get('original_url')
+        if url and not (url.startswith('http://') or url.startswith('https://')):
+            raise forms.ValidationError("URL must start with http:// or https://")
+        return url
