@@ -89,7 +89,7 @@
                                 <div class="history-title">{% if u.title %}{{ u.title }}{% else %}Alias: {{ u.short_code }}{% endif %}</div>
                                 <div class="history-subtitle">
                                     {% if u.is_qr_only %}
-                                        QR Only • {{ u.clicks }} clicks
+                                        QR Code Only • {{ u.clicks }} clicks
                                     {% else %}
                                         {{ u.short_code }} • {{ u.clicks }} clicks
                                     {% endif %}
