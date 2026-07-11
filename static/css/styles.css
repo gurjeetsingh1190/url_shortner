@@ -467,6 +467,7 @@ p {
 table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 th, td {
@@ -490,6 +491,12 @@ tr:last-child td {
 td a {
     color: var(--text-color);
     text-decoration: none;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 td a:hover {
@@ -586,9 +593,6 @@ td a:hover {
     }
     
     .original-url-cell a, .short-url-cell a {
-        max-width: 160px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        max-width: 180px;
     }
 }
