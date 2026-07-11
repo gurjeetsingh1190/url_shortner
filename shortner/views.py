@@ -88,3 +88,35 @@ def redirect_url(request, short_code):
     url_obj.clicks += 1
     url_obj.save()
     return redirect(url_obj.original_url)
+
+@login_required
+def edit_alias(request):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        url_id = request.POST.get('url_id')
+        new_alias = request.POST.get('new_alias', '').strip()
+        
+        if not new_alias:
+            return JsonResponse({'success': False, 'error': 'Alias cannot be empty'})
+            
+        url_obj = get_object_or_404(URL, id=url_id, user=request.user)
+        
+        if new_alias == url_obj.short_code:
+            return JsonResponse({'success': True, 'new_alias': new_alias})
+            
+        if URL.objects.filter(short_code=new_alias).exists():
+            return JsonResponse({'success': False, 'error': f"The alias '{new_alias}' is already taken."})
+            
+        import re
+        if not re.match(r'^[\w-]+$', new_alias):
+            return JsonResponse({'success': False, 'error': 'Alias can only contain letters, numbers, hyphens, and underscores.'})
+            
+        url_obj.short_code = new_alias
+        url_obj.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'new_alias': new_alias,
+            'absolute_short_url': request.build_absolute_uri(f'/{new_alias}/')
+        })
+        
+    return JsonResponse({'success': False, 'error': 'Invalid request'})

@@ -282,4 +282,128 @@ document.addEventListener('DOMContentLoaded', () => {
             submitForm(true);
         });
     }
+
+    // --- Dashboard Search (Levenshtein Distance) ---
+    const searchInput = document.getElementById('dashboard-search');
+    const rows = document.querySelectorAll('.history-row');
+
+    const getLevenshteinDistance = (a, b) => {
+        if (!a.length) return b.length;
+        if (!b.length) return a.length;
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    };
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            rows.forEach(row => {
+                const alias = (row.dataset.alias || '').toLowerCase();
+                if (!query) {
+                    row.style.display = '';
+                    return;
+                }
+                // Check direct substring match first (fastest)
+                if (alias.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    // Check Levenshtein for typos
+                    const distance = getLevenshteinDistance(query, alias);
+                    // allow up to 2 typos if query is somewhat long
+                    const maxTypos = query.length > 3 ? 2 : 1; 
+                    if (distance <= maxTypos) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    }
+
+    // --- Inline Alias Editing ---
+    document.querySelectorAll('.edit-alias-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.id;
+            document.getElementById(`alias-display-${id}`).style.display = 'none';
+            document.getElementById(`alias-edit-${id}`).style.display = 'flex';
+        });
+    });
+
+    document.querySelectorAll('.cancel-alias-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.id;
+            document.getElementById(`alias-edit-${id}`).style.display = 'none';
+            document.getElementById(`alias-display-${id}`).style.display = 'flex';
+        });
+    });
+
+    document.querySelectorAll('.save-alias-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.id;
+            const input = document.getElementById(`alias-input-${id}`);
+            const newAlias = input.value.trim();
+            const originalAlias = document.querySelector(`.edit-alias-btn[data-id="${id}"]`).dataset.shortcode;
+
+            if (newAlias === originalAlias) {
+                document.querySelector(`.cancel-alias-btn[data-id="${id}"]`).click();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('url_id', id);
+            formData.append('new_alias', newAlias);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+
+            fetch('/edit-alias/', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Alias updated successfully', 'success');
+                    // Update DOM
+                    const link = document.getElementById(`alias-link-${id}`);
+                    link.href = data.absolute_short_url;
+                    link.textContent = data.absolute_short_url;
+                    document.querySelector(`.edit-alias-btn[data-id="${id}"]`).dataset.shortcode = data.new_alias;
+                    input.value = data.new_alias;
+                    
+                    document.getElementById(`alias-edit-${id}`).style.display = 'none';
+                    document.getElementById(`alias-display-${id}`).style.display = 'flex';
+                    
+                    // Update dataset for search
+                    const row = document.querySelector(`.history-row[data-alias="${originalAlias}"]`);
+                    if(row) row.dataset.alias = data.new_alias;
+                } else {
+                    showToast(data.error || 'Update failed', 'error');
+                }
+            })
+            .catch(() => showToast('Server error', 'error'))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph ph-check"></i>';
+            });
+        });
+    });
 });

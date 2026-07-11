@@ -60,7 +60,13 @@
 
         <!-- Dashboard Table in a Glass Panel -->
         <section class="history-section">
-            <h2 style="font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 700;">Creation History</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <h2 style="font-size: 1.4rem; font-weight: 700; margin: 0;">Creation History</h2>
+                <div class="search-box glass-panel" style="padding: 0.5rem 1rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem; min-width: 250px;">
+                    <i class="ph ph-magnifying-glass" style="color: var(--text-muted); font-size: 1.2rem;"></i>
+                    <input type="text" id="dashboard-search" placeholder="Search aliases..." style="background: transparent; border: none; outline: none; color: var(--text-color); width: 100%; font-size: 0.95rem;">
+                </div>
+            </div>
 
             <div class="history-panel glass-panel">
                 <table>
@@ -74,7 +80,7 @@
                     </thead>
                     <tbody id="recent-table-body">
                         {% for u in recent_urls %}
-                        <tr>
+                        <tr class="history-row" data-alias="{{ u.short_code }}">
                             <td class="original-url-cell" data-label="Original">
                                 <a href="{{ u.original_url }}" target="_blank" rel="noopener noreferrer">
                                     {{ u.original_url }}
@@ -82,11 +88,25 @@
                             </td>
                             <td class="short-url-cell" data-label="Short URL">
                                 {% if u.is_qr_only %}
-                                <span style="color: var(--text-muted);">QR Code Only</span>
+                                <span style="color: var(--text-muted);">QR Code Only ({{ u.short_code }})</span>
                                 {% else %}
-                                <a href="{{ u.absolute_short_url }}" target="_blank" rel="noopener noreferrer">
-                                    {{ u.absolute_short_url }}
-                                </a>
+                                <div class="alias-display" id="alias-display-{{ u.id }}" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <a href="{{ u.absolute_short_url }}" target="_blank" rel="noopener noreferrer" id="alias-link-{{ u.id }}">
+                                        {{ u.absolute_short_url }}
+                                    </a>
+                                    <button class="table-icon-btn tooltip-trigger edit-alias-btn" data-id="{{ u.id }}" data-shortcode="{{ u.short_code }}" style="width: 28px; height: 28px; font-size: 0.9rem;">
+                                        <i class="ph ph-pencil-simple"></i>
+                                    </button>
+                                </div>
+                                <div class="alias-edit" id="alias-edit-{{ u.id }}" style="display: none; align-items: center; gap: 0.5rem;">
+                                    <input type="text" id="alias-input-{{ u.id }}" value="{{ u.short_code }}" class="glass-input" style="padding: 0.3rem 0.6rem; font-size: 0.9rem; width: 120px;">
+                                    <button class="table-icon-btn tooltip-trigger save-alias-btn" data-id="{{ u.id }}" style="width: 28px; height: 28px; font-size: 0.9rem; color: #2ecc71;">
+                                        <i class="ph ph-check"></i>
+                                    </button>
+                                    <button class="table-icon-btn tooltip-trigger cancel-alias-btn" data-id="{{ u.id }}" style="width: 28px; height: 28px; font-size: 0.9rem; color: #e74c3c;">
+                                        <i class="ph ph-x"></i>
+                                    </button>
+                                </div>
                                 {% endif %}
                             </td>
                             <td data-label="Clicks">
@@ -95,13 +115,16 @@
                             <td data-label="Actions">
                                 <div class="actions-cell">
                                     {% if not u.is_qr_only %}
-                                    <button class="table-icon-btn tooltip-trigger" onclick="copyToClipboard('{{ u.absolute_short_url }}', this)">
+                                    <button class="table-icon-btn tooltip-trigger" onclick="copyToClipboard('{{ u.absolute_short_url }}', this)" title="Copy Link">
                                         <i class="ph ph-copy"></i>
                                     </button>
                                     {% endif %}
-                                    <button class="table-icon-btn tooltip-trigger" onclick="showQRCode('{% if u.is_qr_only %}{{ u.original_url }}{% else %}{{ u.absolute_short_url }}{% endif %}')">
+                                    <button class="table-icon-btn tooltip-trigger" onclick="showQRCode('{% if u.is_qr_only %}{{ u.original_url }}{% else %}{{ u.absolute_short_url }}{% endif %}')" title="View QR">
                                         <i class="ph ph-qr-code"></i>
                                     </button>
+                                    <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={% if u.is_qr_only %}{{ u.original_url|urlencode }}{% else %}{{ u.absolute_short_url|urlencode }}{% endif %}" download="QRCode.png" target="_blank" class="table-icon-btn tooltip-trigger" style="text-decoration: none;" title="Download QR">
+                                        <i class="ph ph-download-simple"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>
