@@ -15,42 +15,54 @@
 </head>
 <body>
 
-    <div class="auth-bar" style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; font-size: 0.9rem; margin-bottom: 2rem; color: var(--text-muted);">
-        <button id="theme-toggle" class="btn-auth-outline" style="padding: 0.35rem 0.75rem; border-radius: 20px;" aria-label="Toggle theme">
-            ☀️ Light Mode
-        </button>
-        <a href="{% url 'home' %}" class="btn-auth">Home</a>
-        <form action="{% url 'logout' %}" method="POST" style="display: inline; margin: 0; padding: 0;">
-            {% csrf_token %}
-            <button type="submit" class="btn-auth-outline">Logout</button>
-        </form>
-    </div>
+    <!-- Floating Glass Header (Matching Home) -->
+    <header class="glass-header">
+        <div class="header-content">
+            <a href="{% url 'home' %}" class="logo-link">
+                <i class="ph ph-link"></i> Shortener
+            </a>
+            <div class="auth-bar">
+                <button id="theme-toggle" class="icon-btn tooltip-trigger" aria-label="Toggle theme">
+                    <i class="ph ph-sun"></i>
+                </button>
+                <a href="{% url 'home' %}" class="icon-btn tooltip-trigger" aria-label="Home">
+                    <i class="ph ph-house"></i>
+                </a>
+                <form action="{% url 'logout' %}" method="POST" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="icon-btn tooltip-trigger" aria-label="Logout">
+                        <i class="ph ph-sign-out"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
 
-    <main>
+    <main class="dashboard-container">
         <h1 style="margin-bottom: 0.25rem;">Account Dashboard</h1>
         <p style="margin-bottom: 2rem; color: var(--text-muted);">View metrics and manage your shortened URLs and QR codes.</p>
 
-        <!-- Stats Grid to occupy empty space beautifully -->
+        <!-- Stats Grid with Glass Panels -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card glass-panel">
                 <h4>Total Links</h4>
                 <p>{{ total_links }}</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card glass-panel">
                 <h4>Total Clicks</h4>
                 <p>{{ total_clicks }}</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card glass-panel">
                 <h4>QR Codes Created</h4>
                 <p>{{ total_qrs }}</p>
             </div>
         </div>
 
-        <!-- Dashboard Table -->
-        <section class="dashboard-section">
-            <h2 style="font-size: 1.3rem; margin-bottom: 1rem; font-weight: 600;">Creation History</h2>
+        <!-- Dashboard Table in a Glass Panel -->
+        <section class="history-section">
+            <h2 style="font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 700;">Creation History</h2>
 
-            <div class="table-container">
+            <div class="history-panel glass-panel">
                 <table>
                     <thead>
                         <tr>
@@ -83,19 +95,19 @@
                             <td data-label="Actions">
                                 <div class="actions-cell">
                                     {% if not u.is_qr_only %}
-                                    <button class="btn-icon" onclick="copyToClipboard('{{ u.absolute_short_url }}', this)">
-                                        Copy
+                                    <button class="table-icon-btn tooltip-trigger" onclick="copyToClipboard('{{ u.absolute_short_url }}', this)">
+                                        <i class="ph ph-copy"></i>
                                     </button>
                                     {% endif %}
-                                    <button class="btn-icon" onclick="showQRCode('{% if u.is_qr_only %}{{ u.original_url }}{% else %}{{ u.absolute_short_url }}{% endif %}')">
-                                        QR Code
+                                    <button class="table-icon-btn tooltip-trigger" onclick="showQRCode('{% if u.is_qr_only %}{{ u.original_url }}{% else %}{{ u.absolute_short_url }}{% endif %}')">
+                                        <i class="ph ph-qr-code"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr id="no-data-row">
-                            <td colspan="4" class="no-data">No history items created yet.</td>
+                            <td colspan="4" class="no-data" style="padding: 2rem; text-align: center; color: var(--text-muted);">No history items created yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -106,12 +118,16 @@
 
     <!-- Modal for QR -->
     <div id="qr-modal" class="modal-overlay">
-        <div class="modal">
+        <div class="modal glass-panel">
             <div class="modal-header">
                 <h3>QR Code</h3>
                 <div style="display: flex; gap: 0.75rem;">
-                    <button id="download-qr-btn" class="modal-close" style="text-decoration: underline;">Download</button>
-                    <button id="close-modal" class="modal-close">Close</button>
+                    <button id="download-qr-btn" class="icon-btn tooltip-trigger" aria-label="Download">
+                        <i class="ph ph-download-simple"></i>
+                    </button>
+                    <button id="close-modal" class="icon-btn tooltip-trigger" aria-label="Close">
+                        <i class="ph ph-x"></i>
+                    </button>
                 </div>
             </div>
             <div class="qr-container">
