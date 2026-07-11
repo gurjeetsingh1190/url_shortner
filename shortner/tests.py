@@ -19,11 +19,11 @@ class URLShortenerTests(TestCase):
         self.assertEqual(self.url.clicks, 0)
         self.assertIsNotNone(self.url.short_code)
 
-    def test_homepage_lists_recent_urls(self):
-        """Verify the homepage renders lists of recent URLs."""
+    def test_homepage_loads_successfully(self):
+        """Verify the homepage renders the shortening form successfully."""
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "https://www.youtube.com")
+        self.assertContains(response, 'id="shorten-form"')
 
     def test_ajax_shorten_url(self):
         """Verify shortening a URL via AJAX works and returns JSON."""
@@ -74,7 +74,7 @@ class URLShortenerTests(TestCase):
         
         # Log in User A
         self.client.login(username="usera", password="passworda")
-        response = self.client.get(reverse('home'))
+        response = self.client.get(reverse('dashboard'))
         
         self.assertEqual(response.status_code, 200)
         # Should contain User A's URL but not User B's
@@ -127,9 +127,31 @@ class URLShortenerTests(TestCase):
         URL.objects.create(
             original_url="https://google.com/qronly",
             is_qr_only=True,
-            short_code="qrxx"
+            short_code="qrxx",
+            user=self.user_a
         )
-        response = self.client.get(reverse('home'))
+        self.client.login(username="usera", password="passworda")
+        response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "QR Code Only")
         self.assertNotContains(response, "/qrxx/")
+
+    def test_dashboard_redirects_anonymous_user(self):
+        """Verify dashboard view redirects anonymous users to login."""
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('login'), response.url)
+
+    def test_dashboard_renders_statistics(self):
+        """Verify the dashboard displays correct metrics sums."""
+        URL.objects.create(original_url="https://google.com/link1", user=self.user_a, short_code="l1xx", clicks=10)
+        URL.objects.create(original_url="https://google.com/link2", user=self.user_a, short_code="l2xx", clicks=5)
+        URL.objects.create(original_url="https://google.com/qr1", user=self.user_a, short_code="qr1x", is_qr_only=True)
+        
+        self.client.login(username="usera", password="passworda")
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertContains(response, "<h4>Total Links</h4><p>2</p>", html=True)
+        self.assertContains(response, "<h4>Total Clicks</h4><p>15</p>", html=True)
+        self.assertContains(response, "<h4>QR Codes Created</h4><p>1</p>", html=True)

@@ -19,7 +19,7 @@
             ☀️ Light Mode
         </button>
         {% if request.user.is_authenticated %}
-        <span>Logged in as <strong>{{ request.user.username }}</strong></span>
+        <a href="{% url 'dashboard' %}" class="btn-auth">Account</a>
         <form action="{% url 'logout' %}" method="POST" style="display: inline; margin: 0; padding: 0;">
             {% csrf_token %}
             <button type="submit" class="btn-auth-outline">Logout</button>
@@ -30,112 +30,35 @@
         {% endif %}
     </div>
 
-    <main>
-        <h1>URL Shortener</h1>
-        <p>Turn long, messy links into short, beautiful URLs you can share anywhere.</p>
+    <!-- Centered hero layout to fill empty space beautifully -->
+    <div class="home-container">
+        <main style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem; font-weight: 700;">URL Shortener</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2.5rem; font-size: 1.05rem;">Turn long, messy links into short, beautiful URLs and secure QR codes.</p>
 
-        <form id="shorten-form" class="shortener-form">
-            {% csrf_token %}
-            <div class="input-wrapper">
-                <input 
-                    type="url" 
-                    name="original_url" 
-                    id="url-input" 
-                    class="url-input" 
-                    placeholder="Paste your long URL here..." 
-                    required
-                >
-            </div>
-            <button type="submit" id="submit-btn" class="btn-primary">
-                <span id="btn-text">Shorten URL</span>
-            </button>
-            <button type="button" id="qr-submit-btn" class="btn-primary" style="background-color: transparent; color: var(--text-color); border: 1px solid var(--border-color);">
-                <span id="qr-btn-text">Create QR</span>
-            </button>
-        </form>
-    </main>
+            <form id="shorten-form" class="shortener-form">
+                {% csrf_token %}
+                <div class="input-wrapper">
+                    <input 
+                        type="url" 
+                        name="original_url" 
+                        id="url-input" 
+                        class="url-input" 
+                        placeholder="Paste your long URL here..." 
+                        required
+                    >
+                </div>
+                <button type="submit" id="submit-btn" class="btn-primary">
+                    <span id="btn-text">Shorten URL</span>
+                </button>
+                <button type="button" id="qr-submit-btn" class="btn-primary" style="background-color: transparent; color: var(--text-color); border: 1px solid var(--border-color);">
+                    <span id="qr-btn-text">Create QR</span>
+                </button>
+            </form>
+        </main>
+    </div>
 
-    <!-- Simple features list -->
-    <section class="features-grid">
-        <div class="feature-card">
-            <h3>✓ Unlimited URLs</h3>
-            <p>Generate as many shortened links as you need.</p>
-        </div>
-        
-        <div class="feature-card">
-            <h3>✓ QR Code</h3>
-            <p>Share links with mobile-friendly QR codes.</p>
-        </div>
-
-        <div class="feature-card">
-            <h3>✓ Analytics</h3>
-            <p>Keep track of link clicks.</p>
-        </div>
-
-        <div class="feature-card">
-            <h3>✓ Secure Links</h3>
-            <p>Reliable SSL redirection.</p>
-        </div>
-    </section>
-
-    <!-- Dashboard -->
-    <section class="dashboard-section">
-        <h2>Recently Created</h2>
-
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Original URL</th>
-                        <th>Short URL</th>
-                        <th>Clicks</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="recent-table-body">
-                    {% for u in recent_urls %}
-                    <tr>
-                        <td class="original-url-cell" data-label="Original">
-                            <a href="{{ u.original_url }}" target="_blank" rel="noopener noreferrer">
-                                {{ u.original_url }}
-                            </a>
-                        </td>
-                        <td class="short-url-cell" data-label="Short URL">
-                            {% if u.is_qr_only %}
-                            <span style="color: var(--text-muted);">QR Code Only</span>
-                            {% else %}
-                            <a href="{{ u.absolute_short_url }}" target="_blank" rel="noopener noreferrer">
-                                {{ u.absolute_short_url }}
-                            </a>
-                            {% endif %}
-                        </td>
-                        <td data-label="Clicks">
-                            <span class="clicks-badge">{% if u.is_qr_only %}-{% else %}{{ u.clicks }} clicks{% endif %}</span>
-                        </td>
-                        <td data-label="Actions">
-                            <div class="actions-cell">
-                                {% if not u.is_qr_only %}
-                                <button class="btn-icon" onclick="copyToClipboard('{{ u.absolute_short_url }}', this)">
-                                    Copy
-                                </button>
-                                {% endif %}
-                                <button class="btn-icon" onclick="showQRCode('{% if u.is_qr_only %}{{ u.original_url }}{% else %}{{ u.absolute_short_url }}{% endif %}')">
-                                    QR Code
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr id="no-data-row">
-                        <td colspan="4" class="no-data">No URLs shortened yet.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Modal for QR -->
+    <!-- Modal for QR Code Display -->
     <div id="qr-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">

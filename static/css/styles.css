@@ -422,3 +422,49 @@ th {
     }
 }
 
+/* Home Layout Scaling */
+.home-container {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Stats Grid Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 3rem;
+    margin-top: 1.5rem;
+}
+
+.stat-card {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    padding: 1.75rem 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    transition: border-color 0.2s ease;
+}
+
+.stat-card:hover {
+    border-color: var(--text-muted);
+}
+
+.stat-card h4 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+.stat-card p {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+}
+

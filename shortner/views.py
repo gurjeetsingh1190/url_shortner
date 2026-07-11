@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
 from .forms import URLForm
 from .models import URL
 
@@ -41,15 +43,25 @@ def home(request):
                 return redirect('home')
 
     form = URLForm()
-    if request.user.is_authenticated:
-        recent_urls = URL.objects.filter(user=request.user).order_by('-created_at')
-    else:
-        recent_urls = URL.objects.filter(user__isnull=True).order_by('-created_at')[:10]
+    return render(request, 'home.html', {'form': form, 'recent_urls': []})
 
+@login_required
+def dashboard(request):
+    recent_urls = URL.objects.filter(user=request.user).order_by('-created_at')
     for u in recent_urls:
         u.absolute_short_url = request.build_absolute_uri(f'/{u.short_code}/')
-
-    return render(request, 'home.html', {'form': form, 'recent_urls': recent_urls})
+    
+    total_links = recent_urls.filter(is_qr_only=False).count()
+    total_clicks = recent_urls.aggregate(Sum('clicks'))['clicks__sum'] or 0
+    total_qrs = recent_urls.filter(is_qr_only=True).count()
+    
+    context = {
+        'recent_urls': recent_urls,
+        'total_links': total_links,
+        'total_clicks': total_clicks,
+        'total_qrs': total_qrs,
+    }
+    return render(request, 'dashboard.html', context)
 
 
 def signup(request):
