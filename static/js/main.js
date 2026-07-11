@@ -18,6 +18,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toast Container
     const toastContainer = document.getElementById('toast-container');
 
+    // Theme Toggle Elements
+    const themeToggle = document.getElementById('theme-toggle');
+
+    if (document.documentElement.classList.contains('light-theme')) {
+        if (themeToggle) themeToggle.textContent = '🌙 Dark Mode';
+    } else {
+        if (themeToggle) themeToggle.textContent = '☀️ Light Mode';
+    }
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const isLight = document.documentElement.classList.toggle('light-theme');
+            if (isLight) {
+                themeToggle.textContent = '🌙 Dark Mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                themeToggle.textContent = '☀️ Light Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    }
+
 
 
     // Show Toast Notification

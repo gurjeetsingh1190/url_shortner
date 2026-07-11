@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - URL Shortener</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.add('light-theme');
+        }
+    </script>
 </head>
 <body>
     <main style="max-width: 400px; margin: 4rem auto 0 auto;">
