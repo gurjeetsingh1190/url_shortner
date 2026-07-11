@@ -1,10 +1,13 @@
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth.models import User
 from .models import URL
 
 
 class URLShortenerTests(TestCase):
     def setUp(self):
+        self.user_a = User.objects.create_user(username="usera", password="passworda")
+        self.user_b = User.objects.create_user(username="userb", password="passwordb")
         self.url = URL.objects.create(
             original_url="https://www.youtube.com",
             short_code="yt12"
@@ -23,7 +26,6 @@ class URLShortenerTests(TestCase):
 
     def test_ajax_shorten_url(self):
         """Verify shortening a URL via AJAX works and returns JSON."""
-        # Simulated AJAX POST request
         response = self.client.post(
             reverse('home'),
             {'original_url': 'https://github.com'},
@@ -35,7 +37,6 @@ class URLShortenerTests(TestCase):
         self.assertEqual(data['original_url'], 'https://github.com')
         self.assertEqual(data['clicks'], 0)
         
-        # Verify it exists in database
         db_url = URL.objects.get(short_code=data['short_code'])
         self.assertEqual(db_url.original_url, 'https://github.com')
 
@@ -43,13 +44,49 @@ class URLShortenerTests(TestCase):
         """Verify redirections redirect and increment the clicks counter."""
         self.assertEqual(self.url.clicks, 0)
         
-        # Hit redirect endpoint
         response = self.client.get(reverse('redirect', args=[self.url.short_code]))
         
-        # Verify redirect status
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "https://www.youtube.com")
         
-        # Verify click count is updated in DB
         self.url.refresh_from_db()
         self.assertEqual(self.url.clicks, 1)
+
+    def test_authenticated_user_shortens_url(self):
+        """Verify URLs shortened by logged-in users link to their account."""
+        self.client.login(username="usera", password="passworda")
+        response = self.client.post(
+            reverse('home'),
+            {'original_url': 'https://google.com'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        db_url = URL.objects.get(short_code=data['short_code'])
+        self.assertEqual(db_url.user, self.user_a)
+
+    def test_dashboard_isolates_user_urls(self):
+        """Verify User A's dashboard displays only User A's links."""
+        url_a = URL.objects.create(original_url="https://google.com/usera", user=self.user_a, short_code="ua12")
+        url_b = URL.objects.create(original_url="https://google.com/userb", user=self.user_b, short_code="ub12")
+        
+        # Log in User A
+        self.client.login(username="usera", password="passworda")
+        response = self.client.get(reverse('home'))
+        
+        self.assertEqual(response.status_code, 200)
+        # Should contain User A's URL but not User B's
+        self.assertContains(response, "https://google.com/usera")
+        self.assertNotContains(response, "https://google.com/userb")
+
+    def test_user_signup_flow(self):
+        """Verify user signup creates account and logs in."""
+        response = self.client.post(reverse('signup'), {
+            'username': 'newuser',
+            'password1': 'newpassword123',
+            'password2': 'newpassword123'
+        })
+        # Check redirect on success
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(User.objects.filter(username='newuser').exists())

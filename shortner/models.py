@@ -1,9 +1,11 @@
 from django.db import models
+from django.contrib.auth.models import User
 import random
 import string
 
 
 class URL(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='urls')
     original_url = models.URLField(max_length=2000)
     short_code = models.CharField(max_length=10, unique=True, blank=True)
     clicks = models.PositiveIntegerField(default=0)

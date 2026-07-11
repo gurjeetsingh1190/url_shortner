@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const qrImage = document.getElementById('qr-image');
     const qrLink = document.getElementById('qr-link');
     const closeModalBtn = document.getElementById('close-modal');
+    const downloadQrBtn = document.getElementById('download-qr-btn');
 
     // Toast Container
     const toastContainer = document.getElementById('toast-container');
@@ -84,6 +85,35 @@ document.addEventListener('DOMContentLoaded', () => {
     qrModal.addEventListener('click', (e) => {
         if (e.target === qrModal) closeModal();
     });
+
+    if (downloadQrBtn) {
+        downloadQrBtn.addEventListener('click', () => {
+            const imgSrc = qrImage.src;
+            if (!imgSrc) return;
+            
+            downloadQrBtn.textContent = 'Saving...';
+            
+            fetch(imgSrc)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'qrcode.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    showToast('QR Code saved!', 'success');
+                })
+                .catch(() => {
+                    showToast('Failed to download.', 'error');
+                })
+                .finally(() => {
+                    downloadQrBtn.textContent = 'Download';
+                });
+        });
+    }
 
     // Form Submission Handling
     form.addEventListener('submit', (e) => {
