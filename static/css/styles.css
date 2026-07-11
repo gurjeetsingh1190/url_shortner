@@ -80,14 +80,15 @@ p {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
 }
 
 .logo-link {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    font-size: 1.2rem;
     color: var(--text-color);
     text-decoration: none;
 }
@@ -96,10 +97,26 @@ p {
     font-size: 1.4rem;
 }
 
+.navbar-username {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-style: italic;
+    font-family: 'Georgia', serif;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #000;
+}
+
+/* In dark mode, white text is needed so it doesn't disappear against dark background */
+html.dark-theme .navbar-username {
+    color: #fff;
+}
+
 .auth-bar {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .inline-form {
@@ -464,42 +481,115 @@ p {
     overflow: hidden;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
+/* iOS-Style Bookmark List */
+.history-list {
+    display: flex;
+    flex-direction: column;
 }
 
-th, td {
-    padding: 1rem 1.5rem;
-    text-align: left;
+.history-item {
     border-bottom: 1px solid var(--border-color);
+    padding: 0;
 }
 
-th {
-    font-weight: 600;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-tr:last-child td {
+.history-item:last-child {
     border-bottom: none;
 }
 
-td a {
-    color: var(--text-color);
-    text-decoration: none;
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: middle;
+.history-summary {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    cursor: pointer;
+    list-style: none; /* Remove default arrow */
+    gap: 1rem;
+    transition: background-color 0.2s;
 }
 
-td a:hover {
+.history-summary::-webkit-details-marker {
+    display: none;
+}
+
+.history-icon {
+    width: 48px;
+    height: 48px;
+    background-color: var(--input-bg);
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.history-text {
+    flex: 1;
+    overflow: hidden;
+}
+
+.history-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.history-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.history-chevron {
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.history-item[open] .history-chevron {
+    transform: rotate(90deg);
+}
+
+.history-content {
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+html.dark-theme .history-content {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.history-detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.detail-link {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.detail-link:hover {
     text-decoration: underline;
 }
 
@@ -509,11 +599,6 @@ td a:hover {
     border-radius: 12px;
     font-size: 0.85rem;
     font-weight: 500;
-}
-
-.actions-cell {
-    display: flex;
-    gap: 0.5rem;
 }
 
 .table-icon-btn {
@@ -557,42 +642,5 @@ td a:hover {
     
     .result-actions button {
         flex: 1;
-    }
-    
-    /* Responsive Table */
-    table, thead, tbody, th, td, tr {
-        display: block;
-    }
-
-    thead tr {
-        display: none;
-    }
-
-    tr {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    td {
-        border: none;
-        padding: 0.5rem 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        text-align: right;
-    }
-
-    td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        text-align: left;
-        margin-right: 1rem;
-    }
-    
-    .original-url-cell a, .short-url-cell a {
-        max-width: 180px;
     }
 }

@@ -10,7 +10,16 @@ class URLForm(forms.ModelForm):
         label='Custom Alias (Optional)',
         widget=forms.TextInput(attrs={
             'placeholder': 'e.g. my-custom-link',
-            'class': 'url-input'
+            'class': 'glass-input'
+        })
+    )
+    title = forms.CharField(
+        max_length=100, 
+        required=False,
+        label='Bookmark Title (Optional)',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'e.g. Google Docs',
+            'class': 'glass-input'
         })
     )
 

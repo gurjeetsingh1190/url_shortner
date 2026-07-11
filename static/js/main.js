@@ -314,19 +314,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const query = e.target.value.toLowerCase().trim();
             rows.forEach(row => {
                 const alias = (row.dataset.alias || '').toLowerCase();
+                const title = (row.dataset.title || '').toLowerCase();
+                
                 if (!query) {
                     row.style.display = '';
                     return;
                 }
                 // Check direct substring match first (fastest)
-                if (alias.includes(query)) {
+                if (alias.includes(query) || title.includes(query)) {
                     row.style.display = '';
                 } else {
                     // Check Levenshtein for typos
-                    const distance = getLevenshteinDistance(query, alias);
+                    const distanceAlias = getLevenshteinDistance(query, alias);
+                    const distanceTitle = title ? getLevenshteinDistance(query, title) : Infinity;
+                    
+                    const minDistance = Math.min(distanceAlias, distanceTitle);
+                    
                     // allow up to 2 typos if query is somewhat long
                     const maxTypos = query.length > 3 ? 2 : 1; 
-                    if (distance <= maxTypos) {
+                    if (minDistance <= maxTypos) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';

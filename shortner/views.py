@@ -16,8 +16,11 @@ def home(request):
             if form.is_valid():
                 url_obj = form.save(commit=False)
                 custom_code = form.cleaned_data.get('custom_code')
+                title = form.cleaned_data.get('title')
                 if custom_code:
                     url_obj.short_code = custom_code
+                if title:
+                    url_obj.title = title
                 if request.user.is_authenticated:
                     url_obj.user = request.user
                 if request.POST.get('is_qr_only') == 'true':
@@ -40,8 +43,11 @@ def home(request):
             if form.is_valid():
                 url_obj = form.save(commit=False)
                 custom_code = form.cleaned_data.get('custom_code')
+                title = form.cleaned_data.get('title')
                 if custom_code:
                     url_obj.short_code = custom_code
+                if title:
+                    url_obj.title = title
                 if request.user.is_authenticated:
                     url_obj.user = request.user
                 if request.POST.get('is_qr_only') == 'true':

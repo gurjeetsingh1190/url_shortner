@@ -21,6 +21,11 @@
             <a href="{% url 'home' %}" class="logo-link">
                 <i class="ph ph-link"></i> Shortener
             </a>
+            {% if user.is_authenticated %}
+            <div class="navbar-username">
+                {{ user.username }}
+            </div>
+            {% endif %}
             <div class="auth-bar">
                 <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
                     <i class="ph ph-sun"></i>
@@ -51,8 +56,13 @@
             <form id="shorten-form" class="shortener-form glass-panel">
                 {% csrf_token %}
                 <div class="form-row">
-                    <div class="input-wrapper">
+                    <div class="input-wrapper" style="flex: 2;">
                         <input type="url" name="original_url" id="url-input" class="glass-input" placeholder="Paste your long URL here..." required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-wrapper">
+                        <input type="text" name="title" id="title-input" class="glass-input" placeholder="Bookmark Title (Optional)">
                     </div>
                     <div class="input-wrapper">
                         <input type="text" name="custom_code" id="custom-input" class="glass-input" placeholder="Custom Alias (Optional)">

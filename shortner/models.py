@@ -8,6 +8,7 @@ class URL(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='urls')
     original_url = models.URLField(max_length=2000)
     short_code = models.CharField(max_length=50, unique=True, blank=True)
+    title = models.CharField(max_length=100, blank=True, null=True)
     clicks = models.PositiveIntegerField(default=0)
     is_qr_only = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
