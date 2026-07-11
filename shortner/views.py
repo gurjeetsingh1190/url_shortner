@@ -14,6 +14,8 @@ def home(request):
                 url_obj = form.save(commit=False)
                 if request.user.is_authenticated:
                     url_obj.user = request.user
+                if request.POST.get('is_qr_only') == 'true':
+                    url_obj.is_qr_only = True
                 url_obj.save()
                 short_url = request.build_absolute_uri(f'/{url_obj.short_code}/')
                 return JsonResponse({
@@ -22,6 +24,7 @@ def home(request):
                     'original_url': url_obj.original_url,
                     'short_code': url_obj.short_code,
                     'clicks': url_obj.clicks,
+                    'is_qr_only': url_obj.is_qr_only,
                 })
             else:
                 errors = [v[0] for k, v in form.errors.items()]
@@ -32,6 +35,8 @@ def home(request):
                 url_obj = form.save(commit=False)
                 if request.user.is_authenticated:
                     url_obj.user = request.user
+                if request.POST.get('is_qr_only') == 'true':
+                    url_obj.is_qr_only = True
                 url_obj.save()
                 return redirect('home')
 

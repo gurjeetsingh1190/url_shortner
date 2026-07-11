@@ -9,6 +9,7 @@ class URL(models.Model):
     original_url = models.URLField(max_length=2000)
     short_code = models.CharField(max_length=10, unique=True, blank=True)
     clicks = models.PositiveIntegerField(default=0)
+    is_qr_only = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):

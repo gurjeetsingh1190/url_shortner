@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlInput = document.getElementById('url-input');
     const submitBtn = document.getElementById('submit-btn');
     const btnText = document.getElementById('btn-text');
+    const qrSubmitBtn = document.getElementById('qr-submit-btn');
+    const qrBtnText = document.getElementById('qr-btn-text');
     const recentTableBody = document.getElementById('recent-table-body');
     const noDataRow = document.getElementById('no-data-row');
 
@@ -102,17 +104,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Form Submission Handling
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
+    const submitForm = (isQrOnly) => {
         const originalUrl = urlInput.value.trim();
-        if (!originalUrl) return;
+        if (!originalUrl) {
+            if (form.reportValidity) {
+                form.reportValidity();
+            }
+            return;
+        }
 
         submitBtn.disabled = true;
-        btnText.textContent = 'Shortening...';
+        if (qrSubmitBtn) qrSubmitBtn.disabled = true;
+        
+        if (isQrOnly) {
+            if (qrBtnText) qrBtnText.textContent = 'Creating...';
+        } else {
+            if (btnText) btnText.textContent = 'Shortening...';
+        }
 
         const formData = new FormData();
         formData.append('original_url', originalUrl);
+        if (isQrOnly) {
+            formData.append('is_qr_only', 'true');
+        }
 
         fetch('', {
             method: 'POST',
@@ -125,40 +139,64 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(async response => {
             const data = await response.json();
             if (response.ok && data.success) {
-                showToast('URL shortened!', 'success');
+                showToast(isQrOnly ? 'QR Code created!' : 'URL shortened!', 'success');
                 urlInput.value = '';
                 
                 if (noDataRow) {
                     noDataRow.remove();
                 }
 
-                // Prepend new URL to table
                 const newRow = document.createElement('tr');
+                
+                let shortUrlCell = '';
+                let actionsCell = '';
+                let clicksCell = '';
+                
+                if (data.is_qr_only) {
+                    shortUrlCell = `<span style="color: var(--text-muted);">QR Code Only</span>`;
+                    clicksCell = `-`;
+                    actionsCell = `
+                        <button class="btn-icon" onclick="showQRCode('${data.original_url}')">
+                            QR Code
+                        </button>
+                    `;
+                } else {
+                    shortUrlCell = `<a href="${data.short_url}" target="_blank" rel="noopener noreferrer">${data.short_url}</a>`;
+                    clicksCell = `${data.clicks} clicks`;
+                    actionsCell = `
+                        <button class="btn-icon" onclick="copyToClipboard('${data.short_url}', this)">
+                            Copy
+                        </button>
+                        <button class="btn-icon" onclick="showQRCode('${data.short_url}')">
+                            QR Code
+                        </button>
+                    `;
+                }
+
                 newRow.innerHTML = `
                     <td class="original-url-cell" data-label="Original">
                         <a href="${data.original_url}" target="_blank" rel="noopener noreferrer">${data.original_url}</a>
                     </td>
                     <td class="short-url-cell" data-label="Short URL">
-                        <a href="${data.short_url}" target="_blank" rel="noopener noreferrer">${data.short_url}</a>
+                        ${shortUrlCell}
                     </td>
                     <td data-label="Clicks">
-                        <span class="clicks-badge">${data.clicks} clicks</span>
+                        <span class="clicks-badge">${clicksCell}</span>
                     </td>
                     <td data-label="Actions">
                         <div class="actions-cell">
-                            <button class="btn-icon" onclick="copyToClipboard('${data.short_url}', this)">
-                                Copy
-                            </button>
-                            <button class="btn-icon" onclick="showQRCode('${data.short_url}')">
-                                QR Code
-                            </button>
+                            ${actionsCell}
                         </div>
                     </td>
                 `;
 
                 recentTableBody.insertBefore(newRow, recentTableBody.firstChild);
+                
+                if (isQrOnly) {
+                    showQRCode(data.original_url);
+                }
             } else {
-                showToast(data.error || 'Failed to shorten.', 'error');
+                showToast(data.error || 'Failed to process.', 'error');
             }
         })
         .catch(error => {
@@ -167,7 +205,20 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .finally(() => {
             submitBtn.disabled = false;
-            btnText.textContent = 'Shorten URL';
+            if (qrSubmitBtn) qrSubmitBtn.disabled = false;
+            if (btnText) btnText.textContent = 'Shorten URL';
+            if (qrBtnText) qrBtnText.textContent = 'Create QR';
         });
+    };
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitForm(false);
     });
+
+    if (qrSubmitBtn) {
+        qrSubmitBtn.addEventListener('click', () => {
+            submitForm(true);
+        });
+    }
 });

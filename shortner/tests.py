@@ -103,3 +103,33 @@ class URLShortenerTests(TestCase):
         form_data = {'original_url': 'https://google.com'}
         form = URLForm(data=form_data)
         self.assertTrue(form.is_valid())
+
+    def test_ajax_create_qr_only_url(self):
+        """Verify direct QR creation via AJAX works and flags the model."""
+        response = self.client.post(
+            reverse('home'),
+            {
+                'original_url': 'https://github.com/django',
+                'is_qr_only': 'true'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['is_qr_only'])
+        
+        db_url = URL.objects.get(original_url='https://github.com/django')
+        self.assertTrue(db_url.is_qr_only)
+
+    def test_dashboard_renders_qr_only_label(self):
+        """Verify QR-only URLs display the correct text in the dashboard."""
+        URL.objects.create(
+            original_url="https://google.com/qronly",
+            is_qr_only=True,
+            short_code="qrxx"
+        )
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "QR Code Only")
+        self.assertNotContains(response, "/qrxx/")

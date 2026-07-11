@@ -38,9 +38,14 @@
                     required
                 >
             </div>
-            <button type="submit" id="submit-btn" class="btn-primary">
-                <span id="btn-text">Shorten URL</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <button type="submit" id="submit-btn" class="btn-primary" style="flex: 1;">
+                    <span id="btn-text">Shorten URL</span>
+                </button>
+                <button type="button" id="qr-submit-btn" class="btn-primary" style="flex: 1; background-color: transparent; color: #ffffff; border: 1px solid var(--border-color);">
+                    <span id="qr-btn-text">Create QR</span>
+                </button>
+            </div>
         </form>
     </main>
 
@@ -90,19 +95,25 @@
                             </a>
                         </td>
                         <td class="short-url-cell" data-label="Short URL">
+                            {% if u.is_qr_only %}
+                            <span style="color: var(--text-muted);">QR Code Only</span>
+                            {% else %}
                             <a href="{{ u.absolute_short_url }}" target="_blank" rel="noopener noreferrer">
                                 {{ u.absolute_short_url }}
                             </a>
+                            {% endif %}
                         </td>
                         <td data-label="Clicks">
-                            <span class="clicks-badge">{{ u.clicks }} clicks</span>
+                            <span class="clicks-badge">{% if u.is_qr_only %}-{% else %}{{ u.clicks }} clicks{% endif %}</span>
                         </td>
                         <td data-label="Actions">
                             <div class="actions-cell">
+                                {% if not u.is_qr_only %}
                                 <button class="btn-icon" onclick="copyToClipboard('{{ u.absolute_short_url }}', this)">
                                     Copy
                                 </button>
-                                <button class="btn-icon" onclick="showQRCode('{{ u.absolute_short_url }}')">
+                                {% endif %}
+                                <button class="btn-icon" onclick="showQRCode('{% if u.is_qr_only %}{{ u.original_url }}{% else %}{{ u.absolute_short_url }}{% endif %}')">
                                     QR Code
                                 </button>
                             </div>
