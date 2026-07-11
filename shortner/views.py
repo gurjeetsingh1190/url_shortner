@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
@@ -68,9 +69,9 @@ def signup(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('home')
+            form.save()
+            messages.success(request, "Account created successfully! Please login below.")
+            return redirect('login')
     else:
         form = UserCreationForm()
     return render(request, 'registration/signup.html', {'form': form})

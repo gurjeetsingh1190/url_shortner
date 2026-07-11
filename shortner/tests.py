@@ -82,7 +82,7 @@ class URLShortenerTests(TestCase):
         self.assertNotContains(response, "https://google.com/userb")
 
     def test_user_signup_flow(self):
-        """Verify user signup creates account and logs in."""
+        """Verify user signup creates account and redirects to login."""
         response = self.client.post(reverse('signup'), {
             'username': 'newuser',
             'password1': 'newpassword123',
@@ -90,6 +90,7 @@ class URLShortenerTests(TestCase):
         })
         # Check redirect on success
         self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('login'))
         self.assertTrue(User.objects.filter(username='newuser').exists())
 
     def test_url_protocol_validation(self):

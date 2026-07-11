@@ -17,6 +17,16 @@
         <h1>Login</h1>
         <p>Access your personal URL dashboard.</p>
         
+        {% if messages %}
+        <div style="margin-bottom: 1.5rem;">
+            {% for message in messages %}
+            <div style="color: #4caf50; font-size: 0.9rem; padding: 0.75rem 1rem; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 20px;">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         <form method="POST" class="shortener-form" style="flex-direction: column;">
             {% csrf_token %}
             
