@@ -11,6 +11,8 @@ class URL(models.Model):
     title = models.CharField(max_length=100, blank=True, null=True)
     clicks = models.PositiveIntegerField(default=0)
     is_qr_only = models.BooleanField(default=False)
+    password = models.CharField(max_length=128, blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):

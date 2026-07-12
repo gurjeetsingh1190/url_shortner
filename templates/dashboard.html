@@ -128,7 +128,11 @@
                             {% endif %}
                             
                             <div class="history-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                                {% if not u.is_qr_only %}
+                                {% if u.is_qr_only %}
+                                <button class="btn-primary" onclick="convertToLink({{ u.id }}, this)" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
+                                    <i class="ph ph-link"></i> Shorten
+                                </button>
+                                {% else %}
                                 <button class="btn-outline" onclick="copyToClipboard('{{ u.absolute_short_url }}', this)" style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
                                     <i class="ph ph-copy"></i> Copy
                                 </button>

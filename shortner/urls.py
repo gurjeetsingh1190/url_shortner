@@ -9,5 +9,6 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('edit-alias/', views.edit_alias, name='edit_alias'),
+    path('convert-qr/', views.convert_qr_to_link, name='convert_qr'),
     path('<str:short_code>/', views.redirect_url, name='redirect'),
 ]

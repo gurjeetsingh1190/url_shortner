@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('shorten-form');
     const urlInput = document.getElementById('url-input');
     const customInput = document.getElementById('custom-input');
+    const titleInput = document.getElementById('title-input');
+    const passwordInput = document.getElementById('password-input');
+    const expiresInput = document.getElementById('expires-input');
     const submitBtn = document.getElementById('submit-btn');
     const btnText = document.getElementById('btn-text');
     const qrSubmitBtn = document.getElementById('qr-submit-btn');
@@ -47,6 +50,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Convert QR Only Link to Normal Link
+    window.convertToLink = function(urlId, btn) {
+        btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Shortening...';
+        btn.disabled = true;
+        
+        const formData = new FormData();
+        formData.append('url_id', urlId);
+        
+        // Fallback URL hardcoded here since we can't use Django template tag in static JS
+        fetch('/convert-qr/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: formData
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                btn.innerHTML = '<i class="ph ph-link"></i> Shorten';
+                btn.disabled = false;
+                alert(data.error || 'Failed to convert');
+            }
+        }).catch(() => {
+            btn.innerHTML = '<i class="ph ph-link"></i> Shorten';
+            btn.disabled = false;
+            alert('An error occurred.');
+        });
+    };
+
     // Show Toast Notification
     const showToast = (message, type = 'success') => {
         const toast = document.createElement('div');
@@ -62,6 +96,66 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     };
+
+    // Dynamic Add Link Row
+    const addLinkBtn = document.getElementById('add-link-btn');
+    const linkRowsContainer = document.getElementById('link-rows-container');
+
+    if (addLinkBtn && linkRowsContainer) {
+        addLinkBtn.addEventListener('click', () => {
+            const rowCount = linkRowsContainer.querySelectorAll('.link-row').length;
+            if (rowCount >= 10) {
+                showToast('Maximum 10 links allowed at once.', 'error');
+                return;
+            }
+
+            const newRow = document.createElement('div');
+            newRow.className = 'link-row added-row';
+            newRow.style.paddingTop = '1rem';
+            newRow.style.borderTop = '1px solid rgba(255,255,255,0.05)';
+            
+            newRow.innerHTML = `
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center;">
+                    <div class="input-wrapper" style="flex: 1;">
+                        <input type="url" name="original_url" class="glass-input url-input-field" placeholder="Paste your next long URL here..." required style="padding: 1rem 1.25rem; font-size: 1.05rem;">
+                    </div>
+                    <button type="button" class="remove-link-btn icon-btn tooltip-trigger" aria-label="Remove link" style="border-radius: 12px; width: 52px; height: 52px; border: 1px solid rgba(231, 76, 60, 0.3); color: #e74c3c; background: rgba(231, 76, 60, 0.05); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0;">
+                        <i class="ph ph-trash" style="font-size: 1.5rem;"></i>
+                    </button>
+                </div>
+                <div class="form-row" style="margin-bottom: 1.5rem;">
+                    <div style="flex: 1; visibility: hidden; pointer-events: none;">
+                        <!-- Placeholder to keep layout aligned with Bookmark Title -->
+                    </div>
+                    <div class="input-wrapper" style="flex: 1;">
+                        <input type="text" name="custom_code" class="glass-input alias-input-field" placeholder="Custom Alias (Optional)">
+                    </div>
+                </div>
+            `;
+            
+            newRow.querySelector('.remove-link-btn').addEventListener('click', function() {
+                newRow.remove();
+            });
+            
+            linkRowsContainer.appendChild(newRow);
+        });
+    }
+
+    const copyAllBtn = document.getElementById('copy-all-btn');
+    if (copyAllBtn) {
+        copyAllBtn.addEventListener('click', () => {
+            const resultsList = document.getElementById('results-list');
+            const links = Array.from(resultsList.querySelectorAll('a')).map(a => a.href).join('\\n');
+            if (!links) return;
+            
+            navigator.clipboard.writeText(links).then(() => {
+                const originalHtml = copyAllBtn.innerHTML;
+                copyAllBtn.innerHTML = '<i class="ph ph-check"></i> Copied All';
+                setTimeout(() => copyAllBtn.innerHTML = originalHtml, 2000);
+            });
+        });
+    }
+
 
     // Copy to Clipboard Action
     window.copyToClipboard = (text, button) => {
@@ -141,8 +235,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Form Submission Handling
     const submitForm = (isQrOnly) => {
-        const originalUrl = urlInput.value.trim();
-        if (!originalUrl) {
+        const urlInputs = Array.from(document.querySelectorAll('.url-input-field')).map(input => input.value.trim());
+        const aliasInputs = Array.from(document.querySelectorAll('.alias-input-field')).map(input => input.value.trim());
+        
+        let validUrls = [];
+        let validAliases = [];
+        for (let i = 0; i < urlInputs.length; i++) {
+            if (urlInputs[i]) {
+                validUrls.push(urlInputs[i]);
+                validAliases.push(aliasInputs[i]);
+            }
+        }
+
+        if (validUrls.length === 0) {
             if (form.reportValidity) {
                 form.reportValidity();
             }
@@ -159,9 +264,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const formData = new FormData();
-        formData.append('original_url', originalUrl);
-        if (customInput && customInput.value.trim()) {
-            formData.append('custom_code', customInput.value.trim());
+        validUrls.forEach((url, i) => {
+            formData.append('original_url', url);
+            formData.append('custom_code', validAliases[i] || '');
+        });
+
+        if (titleInput && titleInput.value.trim()) {
+            formData.append('title', titleInput.value.trim());
+        }
+        if (passwordInput && passwordInput.value.trim()) {
+            formData.append('password', passwordInput.value.trim());
+        }
+        if (expiresInput && expiresInput.value.trim()) {
+            formData.append('expires_at', expiresInput.value.trim());
         }
         if (isQrOnly) {
             formData.append('is_qr_only', 'true');
@@ -178,89 +293,78 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(async response => {
             const data = await response.json();
             if (response.ok && data.success) {
-                showToast(isQrOnly ? 'QR Code created!' : 'URL shortened!', 'success');
-                urlInput.value = '';
-                if (customInput) customInput.value = '';
-
-                // Handle Dashboard Table (if it exists)
-                if (recentTableBody) {
-                    if (noDataRow) noDataRow.remove();
-                    const newRow = document.createElement('tr');
-                    
-                    let shortUrlCell = '';
-                    let actionsCell = '';
-                    let clicksCell = '';
-                    
-                    if (data.is_qr_only) {
-                        shortUrlCell = `<span style="color: var(--text-muted);">QR Code Only</span>`;
-                        clicksCell = `-`;
-                        actionsCell = `
-                            <button class="table-icon-btn tooltip-trigger" onclick="showQRCode('${data.original_url}')">
-                                <i class="ph ph-qr-code"></i>
-                            </button>
-                        `;
-                    } else {
-                        shortUrlCell = `<a href="${data.short_url}" target="_blank" rel="noopener noreferrer">${data.short_url}</a>`;
-                        clicksCell = `${data.clicks} clicks`;
-                        actionsCell = `
-                            <button class="table-icon-btn tooltip-trigger" onclick="copyToClipboard('${data.short_url}', this)">
-                                <i class="ph ph-copy"></i>
-                            </button>
-                            <button class="table-icon-btn tooltip-trigger" onclick="showQRCode('${data.short_url}')">
-                                <i class="ph ph-qr-code"></i>
-                            </button>
-                        `;
-                    }
-
-                    newRow.innerHTML = `
-                        <td class="original-url-cell" data-label="Original">
-                            <a href="${data.original_url}" target="_blank" rel="noopener noreferrer">${data.original_url}</a>
-                        </td>
-                        <td class="short-url-cell" data-label="Short URL">
-                            ${shortUrlCell}
-                        </td>
-                        <td data-label="Clicks">
-                            <span class="clicks-badge">${clicksCell}</span>
-                        </td>
-                        <td data-label="Actions">
-                            <div class="actions-cell">
-                                ${actionsCell}
-                            </div>
-                        </td>
-                    `;
-
-                    recentTableBody.insertBefore(newRow, recentTableBody.firstChild);
+                showToast(isQrOnly ? 'QR Codes created!' : 'URLs shortened!', 'success');
+                
+                form.reset();
+                if (linkRowsContainer) {
+                    const extraRows = linkRowsContainer.querySelectorAll('.link-row:not(:first-child)');
+                    extraRows.forEach(row => row.remove());
                 }
 
-                // Handle Home Page Result Card
-                if (resultCard) {
+                const resultsList = document.getElementById('results-list');
+                
+                if (resultsList && resultCard) {
+                    resultsList.innerHTML = '';
+                    
+                    data.results.forEach(result => {
+                        const item = document.createElement('div');
+                        item.className = 'bulk-result-item';
+                        item.style.cssText = 'padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1);';
+                        if (document.documentElement.classList.contains('light-theme')) {
+                            item.style.background = 'rgba(0,0,0,0.03)';
+                        }
+                        
+                        let actionsHtml = '';
+                        if (data.is_qr_only) {
+                            actionsHtml = `
+                                <button type="button" class="icon-btn tooltip-trigger outline-icon-btn" onclick="window.showQRCode('${result.original_url}')" aria-label="View QR" style="flex-shrink: 0; width: 32px; height: 32px;">
+                                    <i class="ph ph-qr-code"></i>
+                                </button>
+                            `;
+                        } else {
+                            actionsHtml = `
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button type="button" class="icon-btn tooltip-trigger" onclick="window.copyToClipboard('${result.short_url}', this)" aria-label="Copy" style="flex-shrink: 0; width: 32px; height: 32px;">
+                                        <i class="ph ph-copy"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn tooltip-trigger outline-icon-btn" onclick="window.showQRCode('${result.short_url}')" aria-label="View QR" style="flex-shrink: 0; width: 32px; height: 32px;">
+                                        <i class="ph ph-qr-code"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                        
+                        item.innerHTML = `
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.2rem;">${result.original_url}</div>
+                                ${!data.is_qr_only ? `<a href="${result.short_url}" target="_blank" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">${result.short_url}</a>` : `<span style="color: var(--text-muted);">QR Code Only</span>`}
+                            </div>
+                            ${actionsHtml}
+                        `;
+                        resultsList.appendChild(item);
+                    });
+                    
                     if (data.is_qr_only) {
-                        resultLink.textContent = "QR Code Generated";
-                        resultLink.href = "#";
-                        resultLink.onclick = (e) => { e.preventDefault(); showQRCode(data.original_url); };
-                        copyResultBtn.style.display = 'none';
-                        qrResultBtn.onclick = () => showQRCode(data.original_url);
+                        const copyAllBtn = document.getElementById('copy-all-btn');
+                        if (copyAllBtn) copyAllBtn.style.display = 'none';
                     } else {
-                        resultLink.textContent = data.short_url;
-                        resultLink.href = data.short_url;
-                        resultLink.onclick = null;
-                        copyResultBtn.style.display = 'flex';
-                        copyResultBtn.onclick = () => copyToClipboard(data.short_url, copyResultBtn);
-                        qrResultBtn.onclick = () => showQRCode(data.short_url);
+                        const copyAllBtn = document.getElementById('copy-all-btn');
+                        if (copyAllBtn) copyAllBtn.style.display = 'flex';
                     }
+
                     resultCard.style.display = 'flex';
                 }
 
-                if (isQrOnly) {
-                    showQRCode(data.original_url);
+                if (isQrOnly && data.results.length > 0) {
+                    showQRCode(data.results[0].original_url);
                 }
             } else {
-                showToast(data.error || 'Failed to process.', 'error');
+                showToast(data.error || 'Failed to process URLs.', 'error');
             }
         })
-        .catch(error => {
-            console.error(error);
-            showToast('Server connection error.', 'error');
+        .catch(err => {
+            showToast('An error occurred. Please try again.', 'error');
+            console.error(err);
         })
         .finally(() => {
             submitBtn.disabled = false;

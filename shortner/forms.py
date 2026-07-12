@@ -22,6 +22,23 @@ class URLForm(forms.ModelForm):
             'class': 'glass-input'
         })
     )
+    password = forms.CharField(
+        max_length=50,
+        required=False,
+        label='Password Protect (Optional)',
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Enter a secret password',
+            'class': 'glass-input'
+        })
+    )
+    expires_at = forms.DateTimeField(
+        required=False,
+        label='Expiration Date (Optional)',
+        widget=forms.DateTimeInput(attrs={
+            'type': 'datetime-local',
+            'class': 'glass-input'
+        })
+    )
 
     class Meta:
         model = URL
